@@ -132,27 +132,33 @@ También puedes:
 
 export async function POST(req: Request) {
   try {
-    // Rate limiting: 10 requests per minute per IP
-    const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'anonymous';
-    const { success, limit, reset, remaining } = await ratelimit.limit(ip);
+    // Rate limiting: 10 requests per minute per IP (if configured)
+    let rateLimitHeaders = {};
+    
+    if (ratelimit) {
+      const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'anonymous';
+      const { success, limit, reset, remaining } = await ratelimit.limit(ip);
 
-    if (!success) {
-      return NextResponse.json(
-        { 
-          error: 'Too many requests. Please try again later.',
-          limit,
-          reset,
-          remaining
-        },
-        { 
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': limit.toString(),
-            'X-RateLimit-Remaining': remaining.toString(),
-            'X-RateLimit-Reset': reset.toString(),
+      rateLimitHeaders = {
+        'X-RateLimit-Limit': limit.toString(),
+        'X-RateLimit-Remaining': remaining.toString(),
+        'X-RateLimit-Reset': reset.toString(),
+      };
+
+      if (!success) {
+        return NextResponse.json(
+          { 
+            error: 'Too many requests. Please try again later.',
+            limit,
+            reset,
+            remaining
+          },
+          { 
+            status: 429,
+            headers: rateLimitHeaders
           }
-        }
-      );
+        );
+      }
     }
 
     const { message } = await req.json();
@@ -176,11 +182,7 @@ export async function POST(req: Request) {
         timestamp: new Date().toISOString(),
       },
       {
-        headers: {
-          'X-RateLimit-Limit': limit.toString(),
-          'X-RateLimit-Remaining': remaining.toString(),
-          'X-RateLimit-Reset': reset.toString(),
-        }
+        headers: rateLimitHeaders
       }
     );
 
