@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { ratelimit } from '@/lib/ratelimit';
 
 // Mock responses del Dr. Claude basadas en palabras clave
 const getMockResponse = (message: string): string => {
@@ -131,6 +132,29 @@ También puedes:
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting: 10 requests per minute per IP
+    const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'anonymous';
+    const { success, limit, reset, remaining } = await ratelimit.limit(ip);
+
+    if (!success) {
+      return NextResponse.json(
+        { 
+          error: 'Too many requests. Please try again later.',
+          limit,
+          reset,
+          remaining
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': limit.toString(),
+            'X-RateLimit-Remaining': remaining.toString(),
+            'X-RateLimit-Reset': reset.toString(),
+          }
+        }
+      );
+    }
+
     const { message } = await req.json();
 
     if (!message || typeof message !== 'string') {
@@ -146,10 +170,19 @@ export async function POST(req: Request) {
     // Obtener respuesta mock basada en el mensaje
     const response = getMockResponse(message);
 
-    return NextResponse.json({
-      message: response,
-      timestamp: new Date().toISOString(),
-    });
+    return NextResponse.json(
+      {
+        message: response,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        headers: {
+          'X-RateLimit-Limit': limit.toString(),
+          'X-RateLimit-Remaining': remaining.toString(),
+          'X-RateLimit-Reset': reset.toString(),
+        }
+      }
+    );
 
   } catch (error) {
     console.error('Error in chat API:', error);
