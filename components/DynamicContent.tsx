@@ -88,7 +88,10 @@ const DynamicContent: React.FC = () => {
                 <span className="text-primary-500 font-bold text-lg">
                   {tratamiento.price}
                 </span>
-                <button className="flex items-center gap-2 text-primary-500 font-semibold hover:gap-3 transition-all duration-200">
+                <button
+                  aria-label={`Ver más sobre ${tratamiento.title}`}
+                  className="flex items-center gap-2 text-primary-500 font-semibold hover:gap-3 transition-all duration-200"
+                >
                   Ver más
                   <ArrowRight size={18} />
                 </button>
