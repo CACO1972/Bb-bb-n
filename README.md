@@ -135,6 +135,43 @@ Para obtener las credenciales de Upstash Redis:
 3. Copia las credenciales REST URL y REST TOKEN
 4. Agrégalas a tu archivo `.env.local`
 
+**Nota**: El rate limiting es opcional para desarrollo local. Si no configuras Upstash Redis, la aplicación funcionará normalmente pero sin protección contra abuso de API.
+
+## 🚀 Deployment / Despliegue
+
+### Vercel (Recomendado)
+
+1. **Conecta tu repositorio:**
+   - Ve a [https://vercel.com](https://vercel.com) y conecta tu repositorio de GitHub
+
+2. **Configura variables de entorno:**
+   - En el dashboard de Vercel, ve a Settings > Environment Variables
+   - Agrega las siguientes variables (solo si quieres rate limiting habilitado):
+     - `UPSTASH_REDIS_REST_URL`
+     - `UPSTASH_REDIS_REST_TOKEN`
+
+3. **Deploy:**
+   - Vercel detectará automáticamente que es un proyecto Next.js
+   - El deploy se realizará automáticamente
+
+### Netlify
+
+1. **Conecta tu repositorio:**
+   - Ve a [https://netlify.com](https://netlify.com) y conecta tu repositorio
+
+2. **Configura el build:**
+   - Build command: `npm run build`
+   - Publish directory: `.next`
+
+3. **Variables de entorno (opcionales):**
+   - Ve a Site settings > Environment variables
+   - Agrega `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` si deseas rate limiting
+
+4. **Deploy:**
+   - Netlify construirá y desplegará tu sitio automáticamente
+
+**Importante:** El rate limiting es **opcional**. Si no configuras las variables de entorno de Upstash, la aplicación funcionará perfectamente sin rate limiting (útil para desarrollo y testing).
+
 ## 📱 Responsive Design
 
 ### Desktop (>= 1024px)
