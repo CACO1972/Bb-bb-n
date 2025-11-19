@@ -27,7 +27,7 @@ clinica-miro-web3/
 ├── app/
 │   ├── api/
 │   │   └── chat/
-│   │       └── route.ts          # API mock del chat
+│   │       └── route.ts          # API mock del chat con rate limiting
 │   ├── layout.tsx                 # Layout principal con metadata
 │   ├── page.tsx                   # Homepage con layout 60/40
 │   └── globals.css                # Estilos globales + Tailwind
@@ -36,6 +36,8 @@ clinica-miro-web3/
 │   ├── AIAdvisor.tsx              # ⭐ Componente principal (60%)
 │   ├── DynamicContent.tsx         # Contenido lateral (40%)
 │   └── Footer.tsx                 # Footer profesional
+├── lib/
+│   └── ratelimit.ts               # Configuración de rate limiting
 ├── extracted_files/               # Componentes ImplantX (para integrar)
 ├── tailwind.config.ts             # Configuración con colores custom
 ├── tsconfig.json
@@ -121,7 +123,54 @@ npm run lint     # Linter
 ```bash
 ANTHROPIC_API_KEY=tu_api_key_aqui
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Upstash Redis - Rate Limiting (required)
+UPSTASH_REDIS_REST_URL=your_redis_rest_url_here
+UPSTASH_REDIS_REST_TOKEN=your_redis_rest_token_here
 ```
+
+Para obtener las credenciales de Upstash Redis:
+1. Crea una cuenta en [https://console.upstash.com/](https://console.upstash.com/)
+2. Crea una nueva base de datos Redis
+3. Copia las credenciales REST URL y REST TOKEN
+4. Agrégalas a tu archivo `.env.local`
+
+**Nota**: El rate limiting es opcional para desarrollo local. Si no configuras Upstash Redis, la aplicación funcionará normalmente pero sin protección contra abuso de API.
+
+## 🚀 Deployment / Despliegue
+
+### Vercel (Recomendado)
+
+1. **Conecta tu repositorio:**
+   - Ve a [https://vercel.com](https://vercel.com) y conecta tu repositorio de GitHub
+
+2. **Configura variables de entorno:**
+   - En el dashboard de Vercel, ve a Settings > Environment Variables
+   - Agrega las siguientes variables (solo si quieres rate limiting habilitado):
+     - `UPSTASH_REDIS_REST_URL`
+     - `UPSTASH_REDIS_REST_TOKEN`
+
+3. **Deploy:**
+   - Vercel detectará automáticamente que es un proyecto Next.js
+   - El deploy se realizará automáticamente
+
+### Netlify
+
+1. **Conecta tu repositorio:**
+   - Ve a [https://netlify.com](https://netlify.com) y conecta tu repositorio
+
+2. **Configura el build:**
+   - Build command: `npm run build`
+   - Publish directory: `.next`
+
+3. **Variables de entorno (opcionales):**
+   - Ve a Site settings > Environment variables
+   - Agrega `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` si deseas rate limiting
+
+4. **Deploy:**
+   - Netlify construirá y desplegará tu sitio automáticamente
+
+**Importante:** El rate limiting es **opcional**. Si no configuras las variables de entorno de Upstash, la aplicación funcionará perfectamente sin rate limiting (útil para desarrollo y testing).
 
 ## 📱 Responsive Design
 
@@ -177,6 +226,19 @@ En la carpeta `extracted_files/` encontrarás los componentes del Predictor IA:
 
 Estos componentes están listos para ser integrados en futuras versiones.
 
+## 🔒 Seguridad
+
+### Rate Limiting
+El endpoint de chat API (`/api/chat`) implementa rate limiting para prevenir abuso y ataques DoS:
+- **Límite**: 10 solicitudes por minuto por IP
+- **Implementación**: Upstash Redis con `@upstash/ratelimit`
+- **Headers de respuesta**:
+  - `X-RateLimit-Limit`: Número máximo de solicitudes permitidas
+  - `X-RateLimit-Remaining`: Solicitudes restantes en la ventana actual
+  - `X-RateLimit-Reset`: Timestamp cuando se reinicia el límite
+
+Cuando se excede el límite, la API responde con status 429 (Too Many Requests) y un mensaje informativo.
+
 ## 🎓 Mejores Prácticas Implementadas
 
 ✅ TypeScript strict mode
@@ -187,6 +249,7 @@ Estos componentes están listos para ser integrados en futuras versiones.
 ✅ Accesibilidad básica (ARIA labels, keyboard navigation)
 ✅ Performance optimizado (lazy loading, memoization ready)
 ✅ SEO friendly (metadata completa)
+✅ Rate limiting en API endpoints (protección contra abuso)
 
 ## 👨‍💻 Desarrollo
 
